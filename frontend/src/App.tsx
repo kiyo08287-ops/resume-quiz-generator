@@ -38,6 +38,7 @@ function App() {
 
   // ファイルをポストする関数
   const postFiles = () => {
+    setLoading(true);
     const formData = new FormData();
     uploaded_files.forEach((file) => {
       formData.append('files',file);
@@ -49,9 +50,13 @@ function App() {
       .then(response => response.json())
       .then(data => {
         console.log("Djangoからのレスポンス:",data);
+        setQuizes(data);
+        setQuizIndex(0);
+        setSelected(null);
         setScreen('quiz');
       })
-      .catch(error => console.error("ファイル送信エラー：",error));
+      .catch(error => console.error("ファイル送信エラー：",error))
+      .finally(() => setLoading(false));
   }
 
   const title = "レジュメtoクイズ ジェネレーター"
@@ -69,17 +74,8 @@ function App() {
   const [quizIndex, setQuizIndex] = useState<number>(0);
   // ユーザーの正解数を記憶
   const [correctNum, setCorrectNum] = useState<number>(0);
-
-
-  // 画面が表示されたときにDjangoからクイズを読み込む
-  React.useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/get-quiz/')
-      .then(response => response.json())
-      .then(data => {
-        setQuizes(data);
-      })
-      .catch(error => console.error("Djangoとの通信エラー:",error));
-  },[]);
+  // 通信している状態かどうかを記憶
+  const [loading, setLoading] = useState<boolean>(false);
 
 
   // 画面を返す
@@ -88,10 +84,39 @@ function App() {
       <h1>{title}</h1>
 
       {/* クイズを読み込むまでの読み込み画面 */}
-      {screen == 'quiz' && quizes.length === 0 && (
-        <p style={{textAlign:'center',padding:'40px',color:'#666'}}>
-          クイズデータを読み込み中...
-        </p>
+      {loading === true && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)', // 背景を暗めの半透明に
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999, // 一番手前に表示
+          backdropFilter: 'blur(3px)' // 背景を少しぼかす（モダンなUIに）
+        }}>
+          {/* 中央のホワイトボックス */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '30px 40px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            textAlign: 'center',
+            minWidth: '260px'
+          }}>
+            {/* App.cssで定義したスピナー */}
+            <div className="spinner"></div>
+            <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+              AIクイズデータを生成中...
+            </p>
+            <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#666' }}>
+              レジュメを分析しています
+            </p>
+          </div>
+        </div>
       )}
 
       {/* upload状態の画面 */}

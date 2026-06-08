@@ -20,5 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     # 以下を追加
-    path('api/',include('connect_front_api.urls')),
+    path('api/',include('quiz_api.urls')),
 ]

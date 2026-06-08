@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     # 以下を追加(作成したapi)
-    'connect_front_api',
+    'quiz_api',
 ]
 
 MIDDLEWARE = [
