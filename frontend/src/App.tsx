@@ -17,23 +17,41 @@ function App() {
     setUploadedFiles(filteredFiles);
   }
 
-  // クイズを作成する関数
+  // 2問目以降のクイズを作成する関数
   const makeQuiz = () => {
-    const newQuiz = {
-      question:"問題文"+(quizIndex+2),
-      choices:["選択肢"+(quizIndex+2)+"-1","選択肢"+(quizIndex+2)+"-2","選択肢"+(quizIndex+2)+"-3","選択肢"+(quizIndex+2)+"-4"],
-      correctIndex:2
-    };
-    setQuizes([...quizes,newQuiz]);
-    setQuizIndex(quizIndex+1);
-    setSelected(null);
+    fetch('http://127.0.0.1:8000/api/get-quiz/')
+      .then(response => response.json())
+      .then(data => {
+        setQuizes([...quizes,data[0]]);
+        setQuizIndex(quizIndex+1);
+        setSelected(null);
+      })
+      .catch(error => console.error("Djangoとの通信エラー:",error));
   }
 
-  //
+  // 正解数をカウントする関数
   const isCorrect = (selectedIndex :number) => {
     if(selectedIndex == quizes[quizIndex].correctIndex){
       setCorrectNum(correctNum+1);
     }
+  }
+
+  // ファイルをポストする関数
+  const postFiles = () => {
+    const formData = new FormData();
+    uploaded_files.forEach((file) => {
+      formData.append('files',file);
+    })
+    fetch('http://127.0.0.1:8000/api/upload-files/',{
+      method:'POST',
+      body:formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Djangoからのレスポンス:",data);
+        setScreen('quiz');
+      })
+      .catch(error => console.error("ファイル送信エラー：",error));
   }
 
   const title = "レジュメtoクイズ ジェネレーター"
@@ -44,11 +62,7 @@ function App() {
   const [uploaded_files, setUploadedFiles] = useState<File[]>([]);
   // クイズの情報を記憶
   // クイズオブジェクト
-  const [quizes,setQuizes] = useState([{
-    question : "問題文1",
-    choices: ["選択肢1-1","選択肢1-2","選択肢1-3","選択肢1-4"],
-    correctIndex : 1
-  }]);
+  const [quizes,setQuizes] = useState<any[]>([]);
   // ユーザーのクイズでの選択を記憶
   const [selected, setSelected] = useState<number | null>(null);
   // 何問目かを記憶
@@ -56,10 +70,29 @@ function App() {
   // ユーザーの正解数を記憶
   const [correctNum, setCorrectNum] = useState<number>(0);
 
+
+  // 画面が表示されたときにDjangoからクイズを読み込む
+  React.useEffect(() => {
+    fetch('http://127.0.0.1:8000/api/get-quiz/')
+      .then(response => response.json())
+      .then(data => {
+        setQuizes(data);
+      })
+      .catch(error => console.error("Djangoとの通信エラー:",error));
+  },[]);
+
+
   // 画面を返す
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth:'900px', margin:'40px auto' }}>
       <h1>{title}</h1>
+
+      {/* クイズを読み込むまでの読み込み画面 */}
+      {screen == 'quiz' && quizes.length === 0 && (
+        <p style={{textAlign:'center',padding:'40px',color:'#666'}}>
+          クイズデータを読み込み中...
+        </p>
+      )}
 
       {/* upload状態の画面 */}
       {screen == 'upload' && (
@@ -90,7 +123,7 @@ function App() {
               )}
             </div>
           </div>
-          <button onClick={()=> setScreen('quiz')} disabled={uploaded_files.length==0}
+          <button onClick={postFiles} disabled={uploaded_files.length==0}
               style={{padding:'10px 20px',
                       margin:'10px',
                       fontSize:'16px',
