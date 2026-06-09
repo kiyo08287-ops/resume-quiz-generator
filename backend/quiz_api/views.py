@@ -6,48 +6,11 @@ from google.genai import types
 from pydantic import BaseModel, Field
 import os
 import json
-import random
 
-
-# クイズデータの準備
-@api_view(['GET'])
-def get_quiz(request):
-    # Reactが受け取るためのテスト用クイズデータ（Django側で用意したもの）
-    quiz_pool = [
-        {
-            "question": "DjangoでAPIを作成するとき、アクセス許可を制御するセキュリティ機能の略称は何でしょう？",
-            "choices": ["HTML", "CORS", "CSS", "SQL"],
-            "correctIndex": 1
-        },
-        {
-            "question": "Reactにおいて、コンポーネントの「状態」を管理するために使用する最も代表的なHooksは何でしょう？",
-            "choices": ["useEffect", "useContext", "useState", "useRef"],
-            "correctIndex": 2
-        },
-        {
-            "question": "Gitで、リモートリポジトリ（GitHubなど）に手元のコードをアップロードするコマンドはどれでしょう？",
-            "choices": ["git pull", "git push", "git commit", "git add"],
-            "correctIndex": 1
-        }
-    ]
-    return Response([random.choice(quiz_pool)])
-
-# ファイルの受け取り
-@api_view(['POST'])
-def upload_files(request):
-    # APIキー(環境変数にexport GEMINI_API_KEY="キー"で登録しておく)
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        return Response({"error":"GEMINI_API_KEYが設定されていません"},status=500)
-    client = genai.Client(api_key=api_key)
-
-
-    # テキスト抽出
-    uploaded_files = request.FILES.getlist('files')
-
+# 文字起こし関数
+def extractText(files):
     extracted_text = ""
-
-    for file in uploaded_files:
+    for file in files:
         if file.name.endswith('.pdf'):
             try:
                 reader = PdfReader(file)
@@ -57,38 +20,81 @@ def upload_files(request):
                         extracted_text += text + "\n"
             except Exception as e:
                 print(f"PDF解析エラー({file.name}):{e}")
-        elif file.name.endwith('.txt'):
+        elif file.name.endswith('.txt'):
             try:
                 extracted_text += file.read().decode('utf-8') + "\n"
             except Exception as e:
                 print(f"テキスト解析エラー({file.name}):{e}")
+    return extracted_text
 
-    
-    print(f"--- 届いたファイル数: {len(uploaded_files)}個 ---")
-    for file in uploaded_files:
-        print(f"ファイル名: {file.name}, サイズ: {file.size} bytes")
-    print("\n--- 抽出されたテキスト(最初の100文字) ---")
-    print(extracted_text[:100])
-    print("-----------------------------------------")
-        
-    
-    # Gemini APIでのクイズの生成
+
+
+# Gemini APIによるクイズ作成
+def createQuizByGemini(prompt):
+    # APIキー(環境変数にexport GEMINI_API_KEY="キー"で登録しておく)
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Gemini APIキーが環境変数に設定されていません")
+    client = genai.Client(api_key=api_key)
+
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=QuizSchema,
+            temperature=0.7
+        ),
+    )
+    return [json.loads(response.text)]
+
+
+
+# 2問目以降の新しいクイズの作成
+@api_view(['POST'])
+def get_quiz(request):
+    asked_quiz = request.data.getlist('quizes')
+    upload_files = request.FILES.getlist('files')
+    extracted_text = extractText(upload_files)
+    if not extracted_text.strip():
+        return Response({"error":"ファイルからテキストを抽出できませんでした。"},status=400)
+
+    asked_quiz_summary = ""
+    for idx, quiz_str in enumerate(asked_quiz):
+        try:
+            quiz_obj = json.loads(quiz_str)
+            asked_quiz_summary += f"問題{idx+1}:{quiz_obj.get('question')}\n"
+        except Exception:
+            asked_quiz_summary += f"問題{idx+1}:{quiz_str}\n"
+
     try:
-        prompt = f"以下の広義のレジュメのテキストから、内容に基づいた教育的な四択クイズを1問作成してください。\n\nレジュメテキスト\n{extracted_text}"
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=QuizSchema,
-                temperature=0.7
-            ),
-        )
-        quiz_data = json.loads(response.text)
-        return Response([quiz_data])
+        prompt = f"以下のレジュメテキストから、講義の科目を予測し、その科目とテキスト内容に基づいた教育的な四択クイズを1問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト:\n{extracted_text}\n\nまた、以下の問題はすでに作成済みのため、これらとは重複しない別のクイズを作成してください。\n\nすでに作成済みの問題:\n{asked_quiz_summary}"
+        quiz_data = createQuizByGemini(prompt)
+        return Response(quiz_data)
     except Exception as e:
         print(f"Gemini APIエラー:{e}")
         return Response({"error":f"AIクイズ生成中にエラーが発生しました:{str(e)}"},status=500)
+
+
+
+# ファイルの受け取りと一問目のクイズの返却
+@api_view(['POST'])
+def upload_files(request):
+    # テキスト抽出
+    uploaded_files = request.FILES.getlist('files')
+    extracted_text = extractText(uploaded_files)
+    if not extracted_text.strip():
+        return Response({"error":"ファイルからテキストを抽出できませんでした。"},status=400)
+    
+    # Gemini APIでのクイズの生成
+    try:
+        prompt = f"以下のレジュメテキストから、講義の科目を予測し、その科目とテキスト内容に基づいた教育的な四択クイズを1問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト\n{extracted_text}"
+        quiz_data = createQuizByGemini(prompt)
+        return Response(quiz_data)
+    except Exception as e:
+        print(f"Gemini APIエラー:{e}")
+        return Response({"error":f"AIクイズ生成中にエラーが発生しました:{str(e)}"},status=500)
+
 
 
 # クイズの形式

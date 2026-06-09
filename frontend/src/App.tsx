@@ -11,23 +11,13 @@ function App() {
     }
   }
 
+
   // ファイルを削除する関数
   const deleteFile = (RemoveIndex: number) => {
     const filteredFiles = uploaded_files.filter((_,index) => index != RemoveIndex);
     setUploadedFiles(filteredFiles);
   }
 
-  // 2問目以降のクイズを作成する関数
-  const makeQuiz = () => {
-    fetch('http://127.0.0.1:8000/api/get-quiz/')
-      .then(response => response.json())
-      .then(data => {
-        setQuizes([...quizes,data[0]]);
-        setQuizIndex(quizIndex+1);
-        setSelected(null);
-      })
-      .catch(error => console.error("Djangoとの通信エラー:",error));
-  }
 
   // 正解数をカウントする関数
   const isCorrect = (selectedIndex :number) => {
@@ -36,7 +26,33 @@ function App() {
     }
   }
 
-  // ファイルをポストする関数
+
+  // 2問目以降のクイズを作成する関数
+  const makeQuiz = () => {
+    setLoading(true);
+    const formData = new FormData();
+    uploaded_files.forEach((file) => {
+      formData.append('files',file);
+    })
+    quizes.forEach((quiz) => {
+      formData.append('quizes',JSON.stringify(quiz));
+    })
+    fetch('http://127.0.0.1:8000/api/get-quiz/',{
+      method:'POST',
+      body:formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        setQuizes([...quizes,data[0]]);
+        setQuizIndex(quizIndex+1);
+        setSelected(null);
+      })
+      .catch(error => console.error("Djangoとの通信エラー:",error))
+      .finally(() => setLoading(false));
+  }
+
+
+  // ファイルをポストし、1問目のクイズを取得する関数
   const postFiles = () => {
     setLoading(true);
     const formData = new FormData();
@@ -58,6 +74,7 @@ function App() {
       .catch(error => console.error("ファイル送信エラー：",error))
       .finally(() => setLoading(false));
   }
+
 
   const title = "レジュメtoクイズ ジェネレーター"
 
@@ -91,14 +108,13 @@ function App() {
           left: 0,
           width: '100vw',
           height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.4)', // 背景を暗めの半透明に
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 9999, // 一番手前に表示
-          backdropFilter: 'blur(3px)' // 背景を少しぼかす（モダンなUIに）
+          zIndex: 9999,
+          backdropFilter: 'blur(3px)'
         }}>
-          {/* 中央のホワイトボックス */}
           <div style={{
             backgroundColor: '#ffffff',
             padding: '30px 40px',
@@ -107,7 +123,6 @@ function App() {
             textAlign: 'center',
             minWidth: '260px'
           }}>
-            {/* App.cssで定義したスピナー */}
             <div className="spinner"></div>
             <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
               AIクイズデータを生成中...
@@ -209,7 +224,7 @@ function App() {
                 </div>
               )}
           </div>
-          {/* ボタン配置画面 */}
+          {/* ボタン配置部分 */}
           <div style={{display:'flex', justifyContent:'center', gap:'15px', margin:'0 20px'}}>
             <button onClick={()=> {setScreen('upload');setSelected(null);setQuizIndex(0);setCorrectNum(0);}}
               style={{padding:'10px 20px',
