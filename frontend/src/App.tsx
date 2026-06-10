@@ -27,32 +27,37 @@ function App() {
   }
 
 
-  // 2問目以降のクイズを作成する関数
+  // 6問目以降のクイズを作成する関数
   const makeQuiz = () => {
-    setLoading(true);
-    const formData = new FormData();
-    uploaded_files.forEach((file) => {
-      formData.append('files',file);
-    })
-    quizes.forEach((quiz) => {
-      formData.append('quizes',JSON.stringify(quiz));
-    })
-    fetch('http://127.0.0.1:8000/api/get-quiz/',{
-      method:'POST',
-      body:formData,
-    })
-      .then(response => response.json())
-      .then(data => {
-        setQuizes([...quizes,data[0]]);
-        setQuizIndex(quizIndex+1);
-        setSelected(null);
+    if(quizes.length == quizIndex+1){
+      setLoading(true);
+      const formData = new FormData();
+      uploaded_files.forEach((file) => {
+        formData.append('files',file);
       })
-      .catch(error => console.error("Djangoとの通信エラー:",error))
-      .finally(() => setLoading(false));
+      quizes.forEach((quiz) => {
+        formData.append('quizes',JSON.stringify(quiz));
+      })
+      fetch('http://127.0.0.1:8000/api/get-quiz/',{
+        method:'POST',
+        body:formData,
+      })
+        .then(response => response.json())
+        .then(data => {
+          setQuizes([...quizes,...data]);
+          setQuizIndex(quizIndex+1);
+          setSelected(null);
+        })
+        .catch(error => console.error("Djangoとの通信エラー:",error))
+        .finally(() => setLoading(false));
+    } else {
+      setQuizIndex(quizIndex+1);
+      setSelected(null);
+    }
   }
 
 
-  // ファイルをポストし、1問目のクイズを取得する関数
+  // ファイルをポストし、最初の5問のクイズを取得する関数
   const postFiles = () => {
     setLoading(true);
     const formData = new FormData();
@@ -65,7 +70,6 @@ function App() {
     })
       .then(response => response.json())
       .then(data => {
-        console.log("Djangoからのレスポンス:",data);
         setQuizes(data);
         setQuizIndex(0);
         setSelected(null);

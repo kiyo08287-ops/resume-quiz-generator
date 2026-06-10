@@ -42,15 +42,15 @@ def createQuizByGemini(prompt):
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
-            response_schema=QuizSchema,
+            response_schema=QuizListSchema,
             temperature=0.7
         ),
     )
-    return [json.loads(response.text)]
+    return json.loads(response.text)
 
 
 
-# 2問目以降の新しいクイズの作成
+# 6問目以降の新しいクイズの作成
 @api_view(['POST'])
 def get_quiz(request):
     asked_quiz = request.data.getlist('quizes')
@@ -68,9 +68,9 @@ def get_quiz(request):
             asked_quiz_summary += f"問題{idx+1}:{quiz_str}\n"
 
     try:
-        prompt = f"以下のレジュメテキストから、講義の科目を予測し、その科目とテキスト内容に基づいた教育的な四択クイズを1問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト:\n{extracted_text}\n\nまた、以下の問題はすでに作成済みのため、これらとは重複しない別のクイズを作成してください。\n\nすでに作成済みの問題:\n{asked_quiz_summary}"
+        prompt = f"以下のレジュメテキストから、テキスト内容に基づいた教育的な四択クイズを5問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト:\n{extracted_text}\n\nまた、以下の問題はすでに作成済みのため、これらとは重複しない別のクイズを作成してください。\n\nすでに作成済みの問題:\n{asked_quiz_summary}"
         quiz_data = createQuizByGemini(prompt)
-        return Response(quiz_data)
+        return Response(quiz_data.get('quizes',[]))
     except Exception as e:
         print(f"Gemini APIエラー:{e}")
         return Response({"error":f"AIクイズ生成中にエラーが発生しました:{str(e)}"},status=500)
@@ -88,9 +88,9 @@ def upload_files(request):
     
     # Gemini APIでのクイズの生成
     try:
-        prompt = f"以下のレジュメテキストから、講義の科目を予測し、その科目とテキスト内容に基づいた教育的な四択クイズを1問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト\n{extracted_text}"
+        prompt = f"以下のレジュメテキストから、テキスト内容に基づいた教育的な四択クイズを5問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト\n{extracted_text}"
         quiz_data = createQuizByGemini(prompt)
-        return Response(quiz_data)
+        return Response(quiz_data.get('quizes',[]))
     except Exception as e:
         print(f"Gemini APIエラー:{e}")
         return Response({"error":f"AIクイズ生成中にエラーが発生しました:{str(e)}"},status=500)
@@ -102,3 +102,6 @@ class QuizSchema(BaseModel):
     question:str = Field(description="レジュメ内容に基づいた四択のクイズの問題文")
     choices:list[str] = Field(description="4つの選択肢の配列。文字列の要素を4つ含めること")
     correctIndex:int = Field(description="正解となる選択肢のインデックス。0から3の整数")
+
+class QuizListSchema(BaseModel):
+    quizes: list[QuizSchema] = Field(description="5問のクイズオブジェクトを含んだ配列")
