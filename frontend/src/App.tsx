@@ -19,8 +19,9 @@ function App() {
   }
 
 
-  // 正解数をカウントする関数
-  const isCorrect = (selectedIndex :number) => {
+  // 回答を保存する関数
+  const answer = (selectedIndex :number) => {
+    quizes[quizIndex]['user_select'] = selectedIndex;
     if(selectedIndex == quizes[quizIndex].correctIndex){
       setCorrectNum(correctNum+1);
     }
@@ -29,9 +30,11 @@ function App() {
 
   // 6問目以降のクイズを作成する関数
   const makeQuiz = () => {
+    setScreen('quiz');
     if(quizes.length == quizIndex+1){
       setLoading(true);
       const formData = new FormData();
+      formData.append('quiz_type',quizType);
       uploaded_files.forEach((file) => {
         formData.append('files',file);
       })
@@ -61,6 +64,7 @@ function App() {
   const postFiles = () => {
     setLoading(true);
     const formData = new FormData();
+    formData.append('quiz_type',quizType);
     uploaded_files.forEach((file) => {
       formData.append('files',file);
     })
@@ -79,30 +83,28 @@ function App() {
       .finally(() => setLoading(false));
   }
 
-
-  const title = "レジュメtoクイズ ジェネレーター"
-
   // 画面の状態を記憶
-  const [screen, setScreen] = useState<'upload' | 'quiz'>('upload');
+  const [screen, setScreen] = useState<'upload' | 'quiz' | 'result'>('upload');
   // アップロードされたファイル情報を記憶
   const [uploaded_files, setUploadedFiles] = useState<File[]>([]);
   // クイズの情報を記憶
-  // クイズオブジェクト
   const [quizes,setQuizes] = useState<any[]>([]);
   // ユーザーのクイズでの選択を記憶
   const [selected, setSelected] = useState<number | null>(null);
+  // クイズのタイプを記憶
+  const [quizType, setQuizType] = useState<'wordquiz' | 'knowledgequiz'>('wordquiz');
   // 何問目かを記憶
   const [quizIndex, setQuizIndex] = useState<number>(0);
   // ユーザーの正解数を記憶
   const [correctNum, setCorrectNum] = useState<number>(0);
-  // 通信している状態かどうかを記憶
+  // 通信状態かどうかを記憶
   const [loading, setLoading] = useState<boolean>(false);
 
 
   // 画面を返す
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth:'900px', margin:'40px auto' }}>
-      <h1>{title}</h1>
+      <h1>レジュメtoクイズ ジェネレーター</h1>
 
       {/* クイズを読み込むまでの読み込み画面 */}
       {loading === true && (
@@ -167,6 +169,33 @@ function App() {
               )}
             </div>
           </div>
+          {/* クイズのタイプを選ぶボタン */}
+          <div style={{display:'flex',justifyContent:'center'}}>
+              <button onClick={() => {setQuizType('wordquiz');}}
+                style={{
+                  backgroundColor:quizType=='wordquiz' ? 'rgba(0,0,255,0.3)' : '#EEE',
+                  borderColor:quizType=='wordquiz' ? 'rgba(0,0,255,0.8)' : '#EEE',
+                  borderRadius:'0px',
+                  height:'80px',
+                }}>
+                単語モード<br />
+                <span style={{fontSize:'10px',color:'#555'}}>
+                  テキストの文章から穴抜き問題を作成する
+                </span>
+              </button>
+              <button onClick={() => {setQuizType('knowledgequiz');}} 
+              style={{
+                  backgroundColor:quizType=='knowledgequiz' ? 'rgba(255,0,0,0.3)' : '#EEE',
+                  borderColor:quizType=='knowledgequiz' ? 'rgba(255,0,0,0.8)' : '#EEE',
+                  borderRadius:'0px',
+                  height:'80px',
+              }}>
+                読解モード<br />
+                <span style={{fontSize:'10px',color:'#555'}}>
+                  テキストの内容の理解度を問う問題を作成する
+                </span>
+              </button>
+          </div>
           <button onClick={postFiles} disabled={uploaded_files.length==0}
               style={{padding:'10px 20px',
                       margin:'10px',
@@ -188,7 +217,7 @@ function App() {
       
 
       {/* quiz状態の画面 */}
-      {screen == 'quiz' && (
+      {screen == 'quiz' && quizIndex < quizes.length && (
         <div>
           {/* クイズ画面 */}
           <div style={{ border: '1px solid #dee2e6', padding: '35px 20px 20px 20px', borderRadius: '12px', display:'flex', flexDirection:'column', gap:'10px', position:'relative', boxShadow:'0 4px 12px rgba(0,0,0,0.05)', background:'#fff'}}>
@@ -201,7 +230,7 @@ function App() {
               {quizes[quizIndex].choices.map((choice,index) => {
                 const isSelected = selected === index;
                 return (
-                  <button key={index} onClick={()=> {setSelected(index);isCorrect(index);}} disabled={selected != null} style={{
+                  <button key={index} onClick={()=> {setSelected(index);answer(index);}} disabled={selected != null} style={{
                           padding: '16px 20px',
                           textAlign: 'left',
                           fontSize: '16px',
@@ -225,6 +254,8 @@ function App() {
               {selected != null && (
                 <div style={{marginTop:'15px', padding:'15px',borderRadius:'6px', background: selected === quizes[quizIndex].correctIndex ? '#e2f0d9' : '#fce8e6', color:selected === quizes[quizIndex].correctIndex ? '#2b5115' : '#a71d2a', fontWeight:'bold'}}>
                   {selected === quizes[quizIndex].correctIndex ? '正解!' : '不正解　正解は'+(quizes[quizIndex].correctIndex+1)+'. '+(quizes[quizIndex].choices[quizes[quizIndex].correctIndex])+'です'}
+                  <br />
+                  {quizes[quizIndex].description}
                 </div>
               )}
           </div>
@@ -247,7 +278,8 @@ function App() {
             }}>
               アップロード画面に戻る
             </button>
-            <button onClick={() => makeQuiz()} disabled={selected==null}
+            {quizIndex+1 == quizes.length && (
+              <button onClick={() => (setScreen('result'))} disabled={selected==null}
               style={{padding:'10px 20px',
                       margin:'10px',
                       fontSize:'16px',
@@ -262,8 +294,58 @@ function App() {
                       transition:'all 0.3s',
                       flex:1
             }}>
-              もう一問解く
+              結果を表示
             </button>
+            )}
+            {quizIndex+1 != quizes.length && (
+              <button onClick={() => makeQuiz()} disabled={selected==null}
+              style={{padding:'10px 20px',
+                      margin:'10px',
+                      fontSize:'16px',
+                      cursor:'pointer',
+                      fontWeight:'bold',
+                      cursor:selected==null ? 'not-allowed':'pointer',
+                      backgroundColor:selected==null ? '#f5f5f5':'#007bff',
+                      color:selected==null ? '#bfbfbf':'#ffffff',
+                      border:selected==null ? '1px solid #d9d9d9':'none',
+                      borderRadius:'6px',
+                      boxShadow:selected==null ? 'none':'0 4px 6px rgba(0,123,255,0.15)',
+                      transition:'all 0.3s',
+                      flex:1
+            }}>
+              次の問題へ
+            </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5問解き終わった後の結果表示画面 */}
+      {screen == 'result' && (
+        <div>
+          <h3>結果</h3>
+          <h5>{quizes.length}問中 {correctNum}問正解!</h5>
+          <table>
+            <tr>
+              <td>問題文</td>
+              <td>あなたの選択</td>
+              <td>正解の選択</td>
+              <td>結果</td>
+            </tr>
+            {quizes.map((quiz,index) => {
+              return(
+                <tr key={index}>
+                  <td>{quiz.question}</td>
+                  <td>{quiz.user_select+1}. {quiz.choices[quiz.user_select]}</td>
+                  <td>{quiz.correctIndex+1}. {quiz.choices[quiz.correctIndex]}</td>
+                  <td>{quiz.user_select == quiz.correctIndex ? '○' : '×'}</td>
+                </tr>
+              )
+            })}
+          </table>
+          <div>
+            <button onClick={() => {setScreen('upload');}}>アップロード画面に戻る</button>
+            <button onClick={makeQuiz}>さらに5問解く</button>
           </div>
         </div>
       )}

@@ -55,6 +55,7 @@ def createQuizByGemini(prompt):
 def get_quiz(request):
     asked_quiz = request.data.getlist('quizes')
     upload_files = request.FILES.getlist('files')
+    quiz_type = request.data.get('quiz_type')
     extracted_text = extractText(upload_files)
     if not extracted_text.strip():
         return Response({"error":"ファイルからテキストを抽出できませんでした。"},status=400)
@@ -68,7 +69,11 @@ def get_quiz(request):
             asked_quiz_summary += f"問題{idx+1}:{quiz_str}\n"
 
     try:
-        prompt = f"以下のレジュメテキストから、テキスト内容に基づいた教育的な四択クイズを5問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト:\n{extracted_text}\n\nまた、以下の問題はすでに作成済みのため、これらとは重複しない別のクイズを作成してください。\n\nすでに作成済みの問題:\n{asked_quiz_summary}"
+        if quiz_type == 'knowledgequiz':
+            prompt = f"以下のレジュメテキストから、テキスト内容に基づいた教育的な四択クイズを5問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。"
+        else :
+            prompt = f"以下のレジュメテキストから、重要な単語、専門用語、重要な記述に関する文章をそのまま一文抽出し、その重要な言葉を[___]で隠した空欄補充問題を5問作成してください。必ず、[___]は1つのみ含むようにしてください。選択肢choicesには空欄に入る正しい言葉と紛らわしい言葉3つを用意してください。"
+        prompt = f"{prompt}\n\nレジュメテキスト:\n{extracted_text}\n\nまた、以下の問題はすでに作成済みのため、これらとは重複しない別のクイズを作成してください。\n\nすでに作成済みの問題:\n{asked_quiz_summary}"
         quiz_data = createQuizByGemini(prompt)
         return Response(quiz_data.get('quizes',[]))
     except Exception as e:
@@ -83,12 +88,17 @@ def upload_files(request):
     # テキスト抽出
     uploaded_files = request.FILES.getlist('files')
     extracted_text = extractText(uploaded_files)
+    quiz_type = request.data.get('quiz_type')
     if not extracted_text.strip():
         return Response({"error":"ファイルからテキストを抽出できませんでした。"},status=400)
     
     # Gemini APIでのクイズの生成
     try:
-        prompt = f"以下のレジュメテキストから、テキスト内容に基づいた教育的な四択クイズを5問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。\n\nレジュメテキスト\n{extracted_text}"
+        if quiz_type == 'knowledgequiz':
+            prompt = f"以下のレジュメテキストから、テキスト内容に基づいた教育的な四択クイズを5問作成してください。「この講義の目的は何か」「何について説明しているか」といった、講義のテーマやメタ的な構成を問う問題は避け、知識や理解を問う問題にしてください。"
+        else :
+            prompt = f"以下のレジュメテキストから、重要な単語、専門用語、重要な記述に関する文章をそのまま一文抽出し、その重要な言葉を[___]で隠した空欄補充問題を5問作成してください。必ず、[___]は1つのみ含むようにしてください。選択肢choicesには空欄に入る正しい言葉と紛らわしい言葉3つを用意してください。"
+        prompt = f"{prompt}\n\nレジュメテキスト:\n{extracted_text}"
         quiz_data = createQuizByGemini(prompt)
         return Response(quiz_data.get('quizes',[]))
     except Exception as e:
@@ -102,6 +112,7 @@ class QuizSchema(BaseModel):
     question:str = Field(description="レジュメ内容に基づいた四択のクイズの問題文")
     choices:list[str] = Field(description="4つの選択肢の配列。文字列の要素を4つ含めること")
     correctIndex:int = Field(description="正解となる選択肢のインデックス。0から3の整数")
+    description:str = Field(description="作成した問題に対する解説。100文字以内")
 
 class QuizListSchema(BaseModel):
     quizes: list[QuizSchema] = Field(description="5問のクイズオブジェクトを含んだ配列")
