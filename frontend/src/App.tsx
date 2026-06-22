@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import {AllScreen,
-  LoadingScreen,LoadingBackground,LoadingText1,LoadingText2,
-  UploadArea,UploadAreaInput,UploadedFilesArea,UploadedFilesPart,UploadedFile,FileDeleteButton,UploadAreaText,SelectQuizTypeArea,SelectQuizTypeButton,SelectQuizTypeButtonText,MakeQuizButton,
-  QuizArea,QuizNumText,QuizCorrectNumText,Question,QuizAnswerButton,QuizAnswerText,CheckAnsArea,ButtonArea,BackToUploadButton,NextButton,} from './CssTags'
+import {AllScreen} from './CssTags'
+import {QuizScreen} from './QuizScreen/QuizScreen'
+import {ResultScreen} from './ResultScreen/ResultScreen'
+import {UploadScreen} from './UploadScreen/UploadScreen'
+import { LoadingScreen } from './LoadingScreen/LoadingScreen'
 import './App.css'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
     if (e.target.files && e.target.files[0]) {
       const newFile = e.target.files[0];
       setUploadedFiles([...uploaded_files,newFile]);
+      e.target.value = '';
     }
   }
 
@@ -118,150 +120,43 @@ function App() {
 
       {/* クイズを読み込むまでの読み込み画面 */}
       {loading === true && (
-        <LoadingScreen>
-          <LoadingBackground>
-            <div className="spinner"></div>
-            <LoadingText1>
-              AIクイズデータを生成中...
-            </LoadingText1>
-            <LoadingText2>
-              レジュメを分析しています
-            </LoadingText2>
-          </LoadingBackground>
-        </LoadingScreen>
+        <LoadingScreen />
       )}
 
       {/* upload状態の画面 */}
       {screen == 'upload' && (
-        <div>
-          {/* アップロード部分 */}
-          <UploadArea>
-            <p>ここをクリック<br/>もしくはファイルをドラッグ & ドロップ</p>
-            <UploadAreaInput type="file" onChange={uploadFile} style={{position:'absolute', inset:'0', opacity:'0'}}/>
-          </UploadArea>
-
-          {/* アップロードされたファイルを表示する部分 */}
-          <UploadedFilesArea>
-            <p>アップロードされたファイル</p>
-            <UploadedFilesPart>
-              {uploaded_files.length > 0 ? (
-                uploaded_files.map((file,index) => (
-                  <UploadedFile key={index}>
-                    <span>{file.name}</span>
-                    <FileDeleteButton onClick={() => deleteFile(index)}>
-                      削除
-                    </FileDeleteButton>
-                  </UploadedFile>
-                ))
-              ) : (
-                <UploadAreaText>
-                  まだファイルはありません
-                </UploadAreaText>
-              )}
-            </UploadedFilesPart>
-          </UploadedFilesArea>
-          {/* クイズのタイプを選ぶボタン */}
-          <SelectQuizTypeArea>
-              <SelectQuizTypeButton onClick={() => {setQuizType('wordquiz');}} isActive={quizType==='wordquiz'}>
-                単語モード<br />
-                <SelectQuizTypeButtonText>
-                  テキストの文章から穴抜き問題を作成する
-                </SelectQuizTypeButtonText>
-              </SelectQuizTypeButton>
-              <SelectQuizTypeButton onClick={() => {setQuizType('knowledgequiz');}} isActive={quizType==='knowledgequiz'}>
-                読解モード<br />
-                <SelectQuizTypeButtonText style={{fontSize:'10px',color:'#555'}}>
-                  テキストの内容の理解度を問う問題を作成する
-                </SelectQuizTypeButtonText>
-              </SelectQuizTypeButton>
-          </SelectQuizTypeArea>
-          <MakeQuizButton onClick={postFiles} disabled={uploaded_files.length==0} isActive={uploaded_files.length!=0}>
-            クイズを作成する
-          </MakeQuizButton>
-        </div>
+          <UploadScreen 
+            uploaded_files={uploaded_files}
+            onUploadFile={uploadFile}
+            onDeleteFile={deleteFile}
+            quizType={quizType}
+            onSetQuizType={setQuizType}
+            onPostFiles={postFiles}
+          />
       )}
-
-      
 
       {/* quiz状態の画面 */}
       {screen == 'quiz' && quizIndex < quizes.length && quizes.length > 0 && (
-        <div>
-          {/* クイズ画面 */}
-          <QuizArea>
-            <QuizNumText>第{quizIndex+1}問</QuizNumText>
-            <QuizCorrectNumText>正解数:{correctNum}</QuizCorrectNumText>
-            <br />
-            <Question>
-              {quizes[quizIndex].question}
-            </Question>
-              {quizes[quizIndex].choices.map((choice,index) => {
-                const isSelected = selected === index;
-                return (
-                  <QuizAnswerButton key={index} onClick={()=> {setSelected(index);answer(index);}} disabled={selected != null} isSelected={isSelected} selected={selected==null}>
-                    <QuizAnswerText>
-                      {index+1}. 
-                    </QuizAnswerText>
-                    {choice}
-                  </QuizAnswerButton>
-                );
-              })}
-
-              {/* 答え合わせ画面 */}
-              {selected != null && (
-                <CheckAnsArea isCorrect={selected === quizes[quizIndex].correctIndex}>
-                  {selected === quizes[quizIndex].correctIndex ? '正解!' : '不正解　正解は'+(quizes[quizIndex].correctIndex+1)+'. '+(quizes[quizIndex].choices[quizes[quizIndex].correctIndex])+'です'}
-                  <br />
-                  {quizes[quizIndex].description}
-                </CheckAnsArea>
-              )}
-          </QuizArea>
-          {/* ボタン配置部分 */}
-          <ButtonArea>
-            <BackToUploadButton onClick={()=> {setScreen('upload');setSelected(null);setQuizIndex(0);setCorrectNum(0);}}>
-              アップロード画面に戻る
-            </BackToUploadButton>
-            {quizIndex+1 == quizes.length && (
-              <NextButton onClick={() => (setScreen('result'))} disabled={selected==null} isActive={selected!=null}>
-              結果を表示
-            </NextButton>
-            )}
-            {quizIndex+1 != quizes.length && (
-              <NextButton onClick={() => makeQuiz()} disabled={selected==null} isActive={selected!=null}>
-              次の問題へ
-            </NextButton>
-            )}
-          </ButtonArea>
-        </div>
+        <QuizScreen
+          quizes={quizes}
+          quizIndex={quizIndex}
+          correctNum={correctNum}
+          selected={selected}
+          onSelectAnswer={setSelected}
+          onAnswerSubmit={answer}
+          onBackToUpload={() => {setScreen('upload'); setSelected(null); setQuizIndex(0); setCorrectNum(0);}}
+          onNextQuiz={makeQuiz}
+          onShowResult={() => setScreen('result')}
+        />
       )}
 
       {/* 5問解き終わった後の結果表示画面 */}
       {screen == 'result' && (
-        <div>
-          <h3>結果</h3>
-          <h5>{quizes.length}問中 {correctNum}問正解!</h5>
-          <table>
-            <tr>
-              <td>問題文</td>
-              <td>あなたの選択</td>
-              <td>正解の選択</td>
-              <td>結果</td>
-            </tr>
-            {quizes.map((quiz,index) => {
-              return(
-                <tr key={index}>
-                  <td>{quiz.question}</td>
-                  <td>{quiz.user_select+1}. {quiz.choices[quiz.user_select]}</td>
-                  <td>{quiz.correctIndex+1}. {quiz.choices[quiz.correctIndex]}</td>
-                  <td>{quiz.user_select == quiz.correctIndex ? '○' : '×'}</td>
-                </tr>
-              )
-            })}
-          </table>
-          <div>
-            <button onClick={() => {setScreen('upload');}}>アップロード画面に戻る</button>
-            <button onClick={makeQuiz}>さらに5問解く</button>
-          </div>
-        </div>
+        <ResultScreen
+          quizes={quizes}
+          correctNum={correctNum}
+          onBackToUpload={() => setScreen('upload')}
+          onMoreQuiz={makeQuiz} />
       )}
     </AllScreen>
   )
