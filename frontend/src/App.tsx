@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import {QuizItem} from './types'
 import {AllScreen} from './CssTags'
 import {QuizScreen} from './QuizScreen/QuizScreen'
 import {ResultScreen} from './ResultScreen/ResultScreen'
@@ -100,7 +101,7 @@ function App() {
   // アップロードされたファイル情報を記憶
   const [uploaded_files, setUploadedFiles] = useState<File[]>([]);
   // クイズの情報を記憶
-  const [quizes,setQuizes] = useState<any[]>([]);
+  const [quizes,setQuizes] = useState<QuizItem[]>([]);
   // ユーザーのクイズでの選択を記憶
   const [selected, setSelected] = useState<number | null>(null);
   // クイズのタイプを記憶

@@ -1,9 +1,10 @@
 import React from 'react'
+import type {QuizItem} from '../types'
 import {QuizArea,QuizNumText,QuizCorrectNumText,Question,QuizAnswerButton,QuizAnswerText,CheckAnsArea,ButtonArea,BackToUploadButton,NextButton} from './CssTags'
 
 
 interface QuizScreenProps{
-    quizes:any[];
+    quizes:QuizItem[];
     quizIndex:number;
     correctNum:number;
     selected: number | null;

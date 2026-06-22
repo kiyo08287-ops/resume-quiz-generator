@@ -1,8 +1,9 @@
 import React from 'react'
+import type {QuizItem} from '../types'
 import {ResultTable, ResultButton} from './CssTags'
 
 interface ResultScreenProps{
-    quizes: any[];
+    quizes: QuizItem[];
     correctNum: number;
     onBackToUpload: () => void;
     onMoreQuiz: () => void;
@@ -32,7 +33,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 return(
                   <tr key={index}>
                     <td>{quiz.question}</td>
-                    <td>{quiz.user_select+1}. {quiz.choices[quiz.user_select]}</td>
+                    <td>{quiz.user_select!==undefined && quiz.user_select!==null ? `${quiz.user_select+1}. ${quiz.choices[quiz.user_select]}` : '未回答'}</td>
                     <td>{quiz.correctIndex+1}. {quiz.choices[quiz.correctIndex]}</td>
                     <td>{quiz.user_select == quiz.correctIndex ? '○' : '×'}</td>
                   </tr>
