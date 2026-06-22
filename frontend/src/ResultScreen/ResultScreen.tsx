@@ -1,5 +1,5 @@
 import React from 'react'
-import type {QuizItem} from '../types'
+import {type QuizItem} from '../types'
 import {ResultTable, ResultButton} from './CssTags'
 
 interface ResultScreenProps{

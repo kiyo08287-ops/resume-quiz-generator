@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import {QuizItem} from './types'
+import {type QuizItem} from './types'
 import {AllScreen} from './CssTags'
 import {QuizScreen} from './QuizScreen/QuizScreen'
 import {ResultScreen} from './ResultScreen/ResultScreen'

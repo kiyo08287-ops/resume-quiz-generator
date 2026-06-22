@@ -1,5 +1,5 @@
 import React from 'react'
-import type {QuizItem} from '../types'
+import {type QuizItem} from '../types'
 import {QuizArea,QuizNumText,QuizCorrectNumText,Question,QuizAnswerButton,QuizAnswerText,CheckAnsArea,ButtonArea,BackToUploadButton,NextButton} from './CssTags'
 
 
