@@ -1,4 +1,8 @@
 import React, { useState } from 'react'
+import {AllScreen,
+  LoadingScreen,LoadingBackground,LoadingText1,LoadingText2,
+  UploadArea,UploadAreaInput,UploadedFilesArea,UploadedFilesPart,UploadedFile,FileDeleteButton,UploadAreaText,SelectQuizTypeArea,SelectQuizTypeButton,SelectQuizTypeButtonText,MakeQuizButton,
+  QuizArea,QuizNumText,QuizCorrectNumText,Question,QuizAnswerButton,QuizAnswerText,CheckAnsArea,ButtonArea,BackToUploadButton,NextButton,} from './CssTags'
 import './App.css'
 
 function App() {
@@ -21,7 +25,13 @@ function App() {
 
   // 回答を保存する関数
   const answer = (selectedIndex :number) => {
-    quizes[quizIndex]['user_select'] = selectedIndex;
+    const updatedQuizes = [...quizes];
+    updatedQuizes[quizIndex] = {
+      ...updatedQuizes[quizIndex],
+      user_select: selectedIndex
+    };
+    setQuizes(updatedQuizes);
+
     if(selectedIndex == quizes[quizIndex].correctIndex){
       setCorrectNum(correctNum+1);
     }
@@ -103,220 +113,124 @@ function App() {
 
   // 画面を返す
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth:'900px', margin:'40px auto' }}>
+    <AllScreen>
       <h1>レジュメtoクイズ ジェネレーター</h1>
 
       {/* クイズを読み込むまでの読み込み画面 */}
       {loading === true && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(3px)'
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '30px 40px',
-            borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            textAlign: 'center',
-            minWidth: '260px'
-          }}>
+        <LoadingScreen>
+          <LoadingBackground>
             <div className="spinner"></div>
-            <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+            <LoadingText1>
               AIクイズデータを生成中...
-            </p>
-            <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#666' }}>
+            </LoadingText1>
+            <LoadingText2>
               レジュメを分析しています
-            </p>
-          </div>
-        </div>
+            </LoadingText2>
+          </LoadingBackground>
+        </LoadingScreen>
       )}
 
       {/* upload状態の画面 */}
       {screen == 'upload' && (
         <div>
           {/* アップロード部分 */}
-          <div style={{border:'2px dashed #ccc', padding:'20px', textAlign:'center', lineHeight:'100px', position:'relative', height:'200px'}}>
+          <UploadArea>
             <p>ここをクリック<br/>もしくはファイルをドラッグ & ドロップ</p>
-            <input type="file" onChange={uploadFile} style={{position:'absolute', inset:'0', opacity:'0'}}/>
-          </div>
+            <UploadAreaInput type="file" onChange={uploadFile} style={{position:'absolute', inset:'0', opacity:'0'}}/>
+          </UploadArea>
 
           {/* アップロードされたファイルを表示する部分 */}
-          <div style={{margin:'20px'}}>
+          <UploadedFilesArea>
             <p>アップロードされたファイル</p>
-            <div style={{display:'flex', flexDirection:'column'}}>
+            <UploadedFilesPart>
               {uploaded_files.length > 0 ? (
                 uploaded_files.map((file,index) => (
-                  <div key={index} style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'#f0f0f0', padding:'8px 12px', borderRadius:'4px'}}>
+                  <UploadedFile key={index}>
                     <span>{file.name}</span>
-                    <button onClick={() => deleteFile(index)} style={{background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer'}}>
+                    <FileDeleteButton onClick={() => deleteFile(index)}>
                       削除
-                    </button>
-                  </div>
+                    </FileDeleteButton>
+                  </UploadedFile>
                 ))
               ) : (
-                <p style={{color: '#999', fontSize: '14px'}}>
+                <UploadAreaText>
                   まだファイルはありません
-                  </p>
+                </UploadAreaText>
               )}
-            </div>
-          </div>
+            </UploadedFilesPart>
+          </UploadedFilesArea>
           {/* クイズのタイプを選ぶボタン */}
-          <div style={{display:'flex',justifyContent:'center'}}>
-              <button onClick={() => {setQuizType('wordquiz');}}
-                style={{
-                  backgroundColor:quizType=='wordquiz' ? 'rgba(0,0,255,0.3)' : '#EEE',
-                  borderColor:quizType=='wordquiz' ? 'rgba(0,0,255,0.8)' : '#EEE',
-                  borderRadius:'0px',
-                  height:'80px',
-                }}>
+          <SelectQuizTypeArea>
+              <SelectQuizTypeButton onClick={() => {setQuizType('wordquiz');}} isActive={quizType==='wordquiz'}>
                 単語モード<br />
-                <span style={{fontSize:'10px',color:'#555'}}>
+                <SelectQuizTypeButtonText>
                   テキストの文章から穴抜き問題を作成する
-                </span>
-              </button>
-              <button onClick={() => {setQuizType('knowledgequiz');}} 
-              style={{
-                  backgroundColor:quizType=='knowledgequiz' ? 'rgba(255,0,0,0.3)' : '#EEE',
-                  borderColor:quizType=='knowledgequiz' ? 'rgba(255,0,0,0.8)' : '#EEE',
-                  borderRadius:'0px',
-                  height:'80px',
-              }}>
+                </SelectQuizTypeButtonText>
+              </SelectQuizTypeButton>
+              <SelectQuizTypeButton onClick={() => {setQuizType('knowledgequiz');}} isActive={quizType==='knowledgequiz'}>
                 読解モード<br />
-                <span style={{fontSize:'10px',color:'#555'}}>
+                <SelectQuizTypeButtonText style={{fontSize:'10px',color:'#555'}}>
                   テキストの内容の理解度を問う問題を作成する
-                </span>
-              </button>
-          </div>
-          <button onClick={postFiles} disabled={uploaded_files.length==0}
-              style={{padding:'10px 20px',
-                      margin:'10px',
-                      fontSize:'16px',
-                      cursor:'pointer',
-                      fontWeight:'bold',
-                      cursor:uploaded_files.length==0 ? 'not-allowed':'pointer',
-                      backgroundColor:uploaded_files.length==0 ? '#adb5bd':'#fff',
-                      border:uploaded_files.length==0 ? 'none' : '2px solid rgba(0,123,255,0.5)',
-                      borderRadius:'6px',
-                      boxShadow:uploaded_files.length==0 ? 'none':'0 4px 6px rgba(0,0,0,0.2)',
-                      transition:'all 0.3s'
-            }}>
+                </SelectQuizTypeButtonText>
+              </SelectQuizTypeButton>
+          </SelectQuizTypeArea>
+          <MakeQuizButton onClick={postFiles} disabled={uploaded_files.length==0} isActive={uploaded_files.length!=0}>
             クイズを作成する
-          </button>
+          </MakeQuizButton>
         </div>
       )}
 
       
 
       {/* quiz状態の画面 */}
-      {screen == 'quiz' && quizIndex < quizes.length && (
+      {screen == 'quiz' && quizIndex < quizes.length && quizes.length > 0 && (
         <div>
           {/* クイズ画面 */}
-          <div style={{ border: '1px solid #dee2e6', padding: '35px 20px 20px 20px', borderRadius: '12px', display:'flex', flexDirection:'column', gap:'10px', position:'relative', boxShadow:'0 4px 12px rgba(0,0,0,0.05)', background:'#fff'}}>
-            <span style={{position:'absolute', top:'10px', left:'15px', fontSize:'13px', fontWeight: 'bold', color: '#007bff', background: '#e6f7ff', padding: '2px 8px', borderRadius: '4px'}}>第{quizIndex+1}問</span>
-            <span style={{position:'absolute', top:'10px', right:'15px', fontSize:'13px', fontWeight: 'bold', color: '#28a745', background: '#e2f0d9', padding: '2px 8px', borderRadius: '4px'}}>正答数:{correctNum}</span>
+          <QuizArea>
+            <QuizNumText>第{quizIndex+1}問</QuizNumText>
+            <QuizCorrectNumText>正解数:{correctNum}</QuizCorrectNumText>
             <br />
-            <p style={{fontSize: '18px', fontWeight: 'bold', marginTop: '10px', color: '#333'}}>
+            <Question>
               {quizes[quizIndex].question}
-            </p>
+            </Question>
               {quizes[quizIndex].choices.map((choice,index) => {
                 const isSelected = selected === index;
                 return (
-                  <button key={index} onClick={()=> {setSelected(index);answer(index);}} disabled={selected != null} style={{
-                          padding: '16px 20px',
-                          textAlign: 'left',
-                          fontSize: '16px',
-                          cursor: selected == null ? 'pointer' : 'default',
-                          backgroundColor: isSelected ? '#e6f7ff' : '#ffffff',
-                          border: isSelected ? '1px solid #1890ff' : '1px solid #dee2e6',
-                          borderRadius: '8px',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                          transition: 'all 0.2s',    
-                          fontWeight: isSelected ? 'bold' : 'normal',
-                          color: isSelected ? '#1890ff' : '#495057',}}>
-                    <span style={{marginRight:'10px', fontWeight:'bold', color:isSelected ? '#1890ff' : '#8c8c8c'}}>
+                  <QuizAnswerButton key={index} onClick={()=> {setSelected(index);answer(index);}} disabled={selected != null} isSelected={isSelected} selected={selected==null}>
+                    <QuizAnswerText>
                       {index+1}. 
-                    </span>
+                    </QuizAnswerText>
                     {choice}
-                  </button>
+                  </QuizAnswerButton>
                 );
               })}
 
               {/* 答え合わせ画面 */}
               {selected != null && (
-                <div style={{marginTop:'15px', padding:'15px',borderRadius:'6px', background: selected === quizes[quizIndex].correctIndex ? '#e2f0d9' : '#fce8e6', color:selected === quizes[quizIndex].correctIndex ? '#2b5115' : '#a71d2a', fontWeight:'bold'}}>
+                <CheckAnsArea isCorrect={selected === quizes[quizIndex].correctIndex}>
                   {selected === quizes[quizIndex].correctIndex ? '正解!' : '不正解　正解は'+(quizes[quizIndex].correctIndex+1)+'. '+(quizes[quizIndex].choices[quizes[quizIndex].correctIndex])+'です'}
                   <br />
                   {quizes[quizIndex].description}
-                </div>
+                </CheckAnsArea>
               )}
-          </div>
+          </QuizArea>
           {/* ボタン配置部分 */}
-          <div style={{display:'flex', justifyContent:'center', gap:'15px', margin:'0 20px'}}>
-            <button onClick={()=> {setScreen('upload');setSelected(null);setQuizIndex(0);setCorrectNum(0);}}
-              style={{padding:'10px 20px',
-                      margin:'10px',
-                      fontSize:'16px',
-                      cursor:'pointer',
-                      fontWeight:'bold',
-                      cursor:'pointer',
-                      backgroundColor:'#ffffff',
-                      color:'#595959',
-                      border:'1px solid #d9d9d9',
-                      borderRadius:'6px',
-                      boxShadow:'0 2px 4px rgba(0,0,0,0.05)',
-                      transition:'all 0.3s',
-                      flex:1
-            }}>
+          <ButtonArea>
+            <BackToUploadButton onClick={()=> {setScreen('upload');setSelected(null);setQuizIndex(0);setCorrectNum(0);}}>
               アップロード画面に戻る
-            </button>
+            </BackToUploadButton>
             {quizIndex+1 == quizes.length && (
-              <button onClick={() => (setScreen('result'))} disabled={selected==null}
-              style={{padding:'10px 20px',
-                      margin:'10px',
-                      fontSize:'16px',
-                      cursor:'pointer',
-                      fontWeight:'bold',
-                      cursor:selected==null ? 'not-allowed':'pointer',
-                      backgroundColor:selected==null ? '#f5f5f5':'#007bff',
-                      color:selected==null ? '#bfbfbf':'#ffffff',
-                      border:selected==null ? '1px solid #d9d9d9':'none',
-                      borderRadius:'6px',
-                      boxShadow:selected==null ? 'none':'0 4px 6px rgba(0,123,255,0.15)',
-                      transition:'all 0.3s',
-                      flex:1
-            }}>
+              <NextButton onClick={() => (setScreen('result'))} disabled={selected==null} isActive={selected!=null}>
               結果を表示
-            </button>
+            </NextButton>
             )}
             {quizIndex+1 != quizes.length && (
-              <button onClick={() => makeQuiz()} disabled={selected==null}
-              style={{padding:'10px 20px',
-                      margin:'10px',
-                      fontSize:'16px',
-                      cursor:'pointer',
-                      fontWeight:'bold',
-                      cursor:selected==null ? 'not-allowed':'pointer',
-                      backgroundColor:selected==null ? '#f5f5f5':'#007bff',
-                      color:selected==null ? '#bfbfbf':'#ffffff',
-                      border:selected==null ? '1px solid #d9d9d9':'none',
-                      borderRadius:'6px',
-                      boxShadow:selected==null ? 'none':'0 4px 6px rgba(0,123,255,0.15)',
-                      transition:'all 0.3s',
-                      flex:1
-            }}>
+              <NextButton onClick={() => makeQuiz()} disabled={selected==null} isActive={selected!=null}>
               次の問題へ
-            </button>
+            </NextButton>
             )}
-          </div>
+          </ButtonArea>
         </div>
       )}
 
@@ -349,7 +263,7 @@ function App() {
           </div>
         </div>
       )}
-    </div>
+    </AllScreen>
   )
 }
 
