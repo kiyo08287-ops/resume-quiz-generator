@@ -53,17 +53,27 @@ interface QuizAnswerButtonProps{
     selected: boolean;
 }
 export const QuizAnswerButton = styled.button<QuizAnswerButtonProps>`
-    padding: 16px 20px;
+    padding: 18px 24px;
     text-align: left;
     font-size: 16px;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.25, 0.8,0.25,1);
+    font-width: 500;
     cursor: ${(props) => props.selected ? 'pointer' : 'default'};
     background-color: ${(props) => props.isSelected ? '#e6f7ff' : '#ffffff'};
-    border: ${(props) => props.isSelected ? '1px solid #1890ff' : '1px solid #dee2e6'};
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: all 0.2s;
-    font-weight: ${(props) => props.isSelected ? 'bold' : 'normal'};
+    border: 2px solid ${(props) => props.isSelected ? '#1890ff' : '#e9ecef'};
     color: ${(props) => props.isSelected ? '#1890ff' : '#495057'};
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    font-weight: ${(props) => props.isSelected ? 'bold' : 'normal'};
+
+    &:hover {
+        ${(props) => props.selected && `
+            border-color: #007bff;
+            background-color: #f8f9fa;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        `}
+    }
 `
 
 // クイズの選択ボタンの文字
@@ -77,14 +87,45 @@ interface CheckAnsAreaProps{
     isCorrect : boolean;
 }
 export const CheckAnsArea = styled.div<CheckAnsAreaProps>`
-    margin-top: 15px;
-    padding: 15px;
-    border-radius: 6px;
-    background-color: ${(props) => props.isCorrect ? '#e2f0d9' : '#fce8e6'};
-    color: ${(props) => props.isCorrect ? '#2b5115' : '#a71d2a'};
-    font-weight: bold;
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 10px;
+    line-height: 1.6;
+    font-size: 15px;
+    animation: fadeInUp 0.3s ease;
+    background-color: ${(props) => props.isCorrect ? '#f6ffed' : '#fff1f0'};
+    border: 1px solid ${(props) => props.isCorrect ? '#b7eb8f' : '#ffa39e'};
+    color: ${(props) => props.isCorrect ? '#237804' : '#a8071a'};
+
+    &::first-line {
+        font-size: 18px;
+        font-weight: bold;
+        line-height: 2.2;
+    }
+
+    span {
+        display: block;
+        margin-top: 10px;
+        color: #555;
+        font-weight: normal;
+    }
+
+    color: #495057; 
+    font-weight: normal;
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 `
 
+// 戻るボタンと次に進むボタンの部分
 export const ButtonArea = styled.div`
     display: flex;
     justify-content: center;
@@ -94,18 +135,28 @@ export const ButtonArea = styled.div`
 
 // アップロード画面に戻るボタン
 export const BackToUploadButton = styled.button`
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
+    padding: 14px 28px;
+    margin: 15px 0;
+    font-size: 15px;
     cursor: pointer;
     font-weight: bold;
     background-color: #ffffff;
-    color: #595959;
-    border: 1px solid #d9d9d9;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: all 0.3s;
+    color: #6c757d;
+    border: 1px solid #ced4da;
+    border-radius: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
     flex: 1;
+
+    &:hover {
+        background-color: #f8f9fa;
+        color: #495057;
+        border-color: #adb5bd;
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
 `
 
 // 次の問題を表示するボタン、結果表示ボタン
@@ -113,16 +164,31 @@ interface NextButtonProps{
     isActive: boolean;
 }
 export const NextButton = styled.button<NextButtonProps>`
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
+    padding: 14px 28px;
+    margin: 15px 0;
+    font-size: 15px;
     font-weight: bold;
-    cursor: ${(props) => props.isActive ? 'pointer' : 'not-allowed'};
-    background-color: ${(props) => props.isActive ? '#007bff' : '#f5f5f5'};
-    color: ${(props) => props.isActive ? '#ffffff' : '#bfbfbf'};
-    border: ${(props) => props.isActive ? 'none' : '1px solid #d9d9d9'};
-    border-radius: 6px;
-    box-shadow: ${(props) => props.isActive ? '0 4px 6px rgba(0,123,255,0.15)' : 'none'};
-    transition: all 0.3s;
+    border-radius: 30px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     flex: 1;
+    border: none;
+    cursor: ${(props) => props.isActive ? 'pointer' : 'not-allowed'};
+    background: ${(props) => props.isActive ? 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)' : '#e9ecef'};
+    color: ${(props) => props.isActive ? '#ffffff' : '#bfbfbf'};
+    box-shadow: ${(props) => props.isActive ? '0 4px 12px rgba(40, 167, 69, 0.3)' : 'none'};
+
+    &:hover {
+        ${(props) => props.isActive && `
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(40, 167, 69, 0.5);
+            filter: brightness(1.05);
+        `}
+    }
+
+    &:active {
+        ${(props) => props.isActive && `
+            transform: translateY(1px);
+            box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
+        `}
+    }
 `

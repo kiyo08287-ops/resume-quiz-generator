@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import {UploadArea,UploadAreaInput,UploadedFilesArea,UploadedFilesPart,UploadedFile,FileDeleteButton,UploadAreaText,SelectQuizTypeArea,SelectQuizTypeButton,SelectQuizTypeButtonText,MakeQuizButton} from './CssTags'
 
 interface UploadScreenProps{
@@ -8,6 +8,7 @@ interface UploadScreenProps{
     onDeleteFile: (deleteIndex:number) => void;
     onSetQuizType: (quizType: 'wordquiz' | 'knowledgequiz') => void;
     onPostFiles: () => void;
+    onDirectUpload: (files : File[]) => void;
 }
 
 export const UploadScreen: React.FC<UploadScreenProps> = ({
@@ -17,11 +18,53 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
     onDeleteFile,
     onSetQuizType,
     onPostFiles,
+    onDirectUpload,
 }) => {
+  const [isDragActive, setIsDragActive] = useState<boolean>(false);
+
+  // ドラッグエリアにファイルが入ってきたとき
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(true);
+  }
+
+  // ドラッグエリアでファイルをドラッグしているとき
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(true);
+  }
+
+  // ドラッグエリアからファイルが離れたとき
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+  }
+
+  // ファイルがドロップされたとき
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+
+    if(e.dataTransfer.files && e.dataTransfer.files[0]){
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      onDirectUpload(droppedFiles);
+    }
+  }
+
+
     return (
         <div>
           {/* アップロード部分 */}
-          <UploadArea>
+          <UploadArea
+            isActive={isDragActive}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}>
             <p>ここをクリック<br/>もしくはファイルをドラッグ & ドロップ</p>
             <UploadAreaInput type="file" onChange={onUploadFile} style={{position:'absolute', inset:'0', opacity:'0'}}/>
           </UploadArea>
@@ -56,7 +99,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({
               </SelectQuizTypeButton>
               <SelectQuizTypeButton onClick={() => {onSetQuizType('knowledgequiz');}} isActive={quizType==='knowledgequiz'}>
                 読解モード<br />
-                <SelectQuizTypeButtonText style={{fontSize:'10px',color:'#555'}}>
+                <SelectQuizTypeButtonText>
                   テキストの内容の理解度を問う問題を作成する
                 </SelectQuizTypeButtonText>
               </SelectQuizTypeButton>

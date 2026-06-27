@@ -51,9 +51,11 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
               {/* 答え合わせ画面 */}
               {selected!=null && (
                 <CheckAnsArea isCorrect={selected === quizes[quizIndex].correctIndex}>
-                  {selected === quizes[quizIndex].correctIndex ? '正解!' : '不正解　正解は'+(quizes[quizIndex].correctIndex+1)+'. '+(quizes[quizIndex].choices[quizes[quizIndex].correctIndex])+'です'}
+                  {selected === quizes[quizIndex].correctIndex ? '正解!' : '不正解　正解は'+(quizes[quizIndex].correctIndex+1)+'. '+ quizes[quizIndex].choices[quizes[quizIndex].correctIndex]+'です'}
                   <br />
-                  {quizes[quizIndex].description}
+                  <span>
+                    {quizes[quizIndex].description}
+                  </span>
                 </CheckAnsArea>
               )}
           </QuizArea>

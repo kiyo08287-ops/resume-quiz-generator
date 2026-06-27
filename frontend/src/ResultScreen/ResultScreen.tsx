@@ -1,6 +1,6 @@
 import React from 'react'
 import {type QuizItem} from '../types'
-import {ResultTable, ResultButton} from './CssTags'
+import {ResultTitle,ResultStatus,ResultTable, ResultButton,StatusText,ButtonArea} from './CssTags'
 
 interface ResultScreenProps{
     quizes: QuizItem[];
@@ -17,8 +17,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 }) => {
     return (
         <div>
-          <h3>結果</h3>
-          <h5>{quizes.length}問中 {correctNum}問正解!</h5>
+          <ResultTitle>結果</ResultTitle>
+          <ResultStatus>{quizes.length}問中 <span>{correctNum}</span> 問正解!</ResultStatus>
           <ResultTable>
             <thead>
               <tr>
@@ -30,21 +30,22 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             </thead>
             <tbody>
               {quizes.map((quiz,index) => {
+                const isCorrect = quiz.user_select === quiz.correctIndex;
                 return(
                   <tr key={index}>
-                    <td>{quiz.question}</td>
-                    <td>{quiz.user_select!==undefined && quiz.user_select!==null ? `${quiz.user_select+1}. ${quiz.choices[quiz.user_select]}` : '未回答'}</td>
+                    <td style={{fontWeight:'bold',width:'40%'}}>{quiz.question}</td>
+                    <td style={{color:isCorrect ? '#333' : '#dc3545'}}>{quiz.user_select!==undefined && quiz.user_select!==null ? `${quiz.user_select+1}. ${quiz.choices[quiz.user_select]}` : '未回答'}</td>
                     <td>{quiz.correctIndex+1}. {quiz.choices[quiz.correctIndex]}</td>
-                    <td>{quiz.user_select == quiz.correctIndex ? '○' : '×'}</td>
+                    <StatusText isCorrect={isCorrect}>{isCorrect ? '○正解' :  '×不正解'}</StatusText>
                   </tr>
                 )
               })}
             </tbody>
           </ResultTable>
-          <div>
+          <ButtonArea>
             <ResultButton onClick={onBackToUpload}>アップロード画面に戻る</ResultButton>
             <ResultButton onClick={onMoreQuiz}>さらに5問解く</ResultButton>
-          </div>
+          </ButtonArea>
         </div>
     )
 }

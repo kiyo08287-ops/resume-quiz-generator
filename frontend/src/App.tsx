@@ -19,6 +19,12 @@ function App() {
   }
 
 
+  // ドラッグ&ドロップで直接ファイルを追加する関数
+  const directUploadFile = (files: File[]) => {
+    setUploadedFiles([...uploaded_files, ... files]);
+  }
+
+
   // ファイルを削除する関数
   const deleteFile = (RemoveIndex: number) => {
     const filteredFiles = uploaded_files.filter((_,index) => index != RemoveIndex);
@@ -133,6 +139,7 @@ function App() {
             quizType={quizType}
             onSetQuizType={setQuizType}
             onPostFiles={postFiles}
+            onDirectUpload={directUploadFile}
           />
       )}
 
